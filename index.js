@@ -51,8 +51,8 @@ TradeSatoshi.prototype.privateRequest = function(method, callback)
         headers: headers
     };
 
-    var requestDesc = util.format('%s request to url %s with tonce %s, method %s and params %s',
-        options.method, options.url, tonce, method, JSON.stringify(params));
+    var requestDesc = util.format('%s request to url %s with nounce %s, method %s and params %s',
+        options.method, options.url, nounce, method);
 
     executeRequest(options, requestDesc, callback);
     
