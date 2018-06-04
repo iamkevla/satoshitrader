@@ -32,7 +32,7 @@ TradeSatoshi.prototype.privateRequest = function(method, callback)
         return callback(error);
     }
 
-    const nounce = new Date().getTime();
+    const nounce = now.micro();
 
     const text = `${this.key}POST${encodeURIComponent(this.server + '/private/getbalances').toLocaleLowerCase()}${nounce}`;
 
@@ -50,7 +50,7 @@ TradeSatoshi.prototype.privateRequest = function(method, callback)
         headers: headers
     };
 
-    var requestDesc = util.format('%s request to url %s with nounce %s, method %s and params %s',
+    var requestDesc = util.format('%s request to url %s with nounce %s, method %s',
         options.method, options.url, nounce, method);
 
     executeRequest(options, requestDesc, callback);
