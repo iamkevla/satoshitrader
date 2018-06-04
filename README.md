@@ -7,9 +7,6 @@ You will need to [create a new account](https://tradesatoshi.com/Account/Registe
 
 Please contact [@TradeSatoshi](https://twitter.com/TradeSatoshi) if you are having trouble opening an account or generating an API key.
 
-### Install
 
-`npm install tradesatoshi
 
-### Examples
-Please see the exmaples.js file
+

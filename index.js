@@ -10,7 +10,7 @@ var TradeSatoshi = function TradeSatoshi(key, secret, server, timeout)
     this.key = key;
     this.secret = secret;
 
-    this.server = server || 'https://www.tradesatoshi.com';
+    this.server = server || 'https://tradesatoshi.com/api';
 
     this.timeout = timeout || 30000;
 };
@@ -38,74 +38,29 @@ TradeSatoshi.prototype.privateRequest = function(method, params, callback)
         return callback(error);
     }
 
-    var tonce = now.micro(); //microtime.now();
+    const nounce = new Date().getTime();
 
-    var message = "tonce=" + tonce + "&" +
-            "accesskey=" + this.key + "&" +
-            "requestmethod=post&" +
-            "id=1&" +
-            "method=" + method + "&" +
-            "params=" + params.join(',');
+    const text = `${this.apiKey}POST${encodeURIComponent(config.baseURL + '/private/getBalances').toLocaleLowerCase()}${nounce}${Buffer.from(JSON.stringify(config.data)).toString('base64')}`;
 
-    var signer = crypto.createHmac('sha1', this.secret);
-    var hmac = signer.update(message).digest('hex');
+    var signer = crypto.createHmac('sha512', this.secret);
+    var hmac = signer.update(text).digest('hex');
     var signature = new Buffer(this.key + ':' + hmac).toString('base64');
 
     var headers = {
-        "User-Agent": "TradeSatoshi Javascript API Client",
-        'Authorization': 'Basic ' + signature,
-        'Json-Rpc-Tonce': tonce
+        'Authorization': `Basic ${this.apiKey}:${signature}:${nounce}`,
+        'Content-Type': 'application/json; charset=utf-8'
     };
 
     var options = {
-        url: this.server + '/api_trade_v1.php',
+        url: this.server + '/private/getBalances',
         method: 'POST',
-        headers: headers,
-        json: {
-            method: method,
-            params: params,
-            id: 1}
+        headers: headers
     };
 
     var requestDesc = util.format('%s request to url %s with tonce %s, method %s and params %s',
         options.method, options.url, tonce, method, JSON.stringify(params));
 
     executeRequest(options, requestDesc, callback);
-};
-
-TradeSatoshi.prototype.publicRequest = function(method, params, callback)
-{
-    var functionName = 'TradeSatoshi.publicRequest()';
-
-    if(!_.isObject(params))
-    {
-        var error = new VError('%s second parameter %s must be an object. If no params then pass an empty object {}', functionName, params);
-        return callback(error);
-    }
-
-    if (!callback || typeof(callback) != 'function')
-    {
-        var error = new VError('%s third parameter needs to be a callback function with err and data parameters', functionName);
-        return callback(error);
-    }
-
-    var headers = {"User-Agent": "TradeSatoshi Javascript API Client"};
-
-    var path = '/data/' + method;
-
-    var options = {
-        url: this.server + path,
-        method: 'GET',
-        headers: headers,
-        timeout: this.timeout,
-        qs: params,
-        json: {}        // request will parse the json response into an object
-    };
-
-    var requestDesc = util.format('%s request to url %s with parameters %s',
-        options.method, options.url, JSON.stringify(params));
-
-    executeRequest(options, requestDesc, callback)
 };
 
 function executeRequest(options, requestDesc, callback)
@@ -144,154 +99,14 @@ function executeRequest(options, requestDesc, callback)
     });
 }
 
-function constructParamArray(args, maxArgs)
-{
-    var paramArray = [];
-
-    for (i = 1; i <= maxArgs; i++)
-    {
-        // if the argument is undefined
-        if (_.isUndefined(args[i]))
-            break;
-        else
-            paramArray.push(args[i]);
-    }
-
-    return paramArray;
-}
-
-//
-// Public Functions
-//
-
-TradeSatoshi.prototype.getTicker = function getTicker(callback, market)
-{
-    this.publicRequest('ticker', {market: market}, callback);
-};
-
-TradeSatoshi.prototype.getOrderBook = function getOrderBook(callback, market)
-{
-    this.publicRequest('orderbook', {market: market}, callback);
-};
-
-TradeSatoshi.prototype.getHistoryData = function getHistoryData(callback, params)
-{
-    this.publicRequest('historydata', params, callback);
-};
-
-TradeSatoshi.prototype.getTrades = function getTrades(callback)
-{
-    this.publicRequest('trades', {}, callback);
-};
-
 //
 // Private Functions
 //
 
-TradeSatoshi.prototype.buyOrder2 = function buyOrder2(callback, price, amount, market)
+TradeSatoshi.prototype.getBalances = function getBalances(callback )
 {
-    var params = constructParamArray(arguments, 3);
 
-    this.privateRequest('buyOrder2', params, callback);
-};
-
-TradeSatoshi.prototype.sellOrder2 = function sellOrder2(callback, price, amount, market)
-{
-    var params = constructParamArray(arguments, 3);
-
-    this.privateRequest('sellOrder2', params, callback);
-};
-
-// calls either buyOrder2 or sellOrder2 functions depending on the second type parameter
-TradeSatoshi.prototype.createOrder2 = function createOrder2(callback, type, price, amount, market)
-{
-    var functionName = 'TradeSatoshi.createOrder2()',
-        // rest removes the first element of the array
-        params = constructParamArray(_.rest(arguments), 3);
-
-    if (type === 'buy')
-    {
-        this.privateRequest('buyOrder2', params, callback);
-    }
-    else if (type === 'sell')
-    {
-        this.privateRequest('sellOrder2', params, callback);
-    }
-    else
-    {
-        var error = new VError('%s second parameter type "%s" needs to be either "buy" or "sell"', functionName, type);
-        callback(error);
-    }
-};
-
-TradeSatoshi.prototype.cancelOrder = function cancelOrder(callback, id, market)
-{
-    var params = constructParamArray(arguments, 2);
-
-    this.privateRequest('cancelOrder', params, callback);
-};
-
-TradeSatoshi.prototype.getOrders = function getOrders(callback, openOnly, market, limit, offset, since, withDetail)
-{
-    var params = constructParamArray(arguments, 6);
-
-    this.privateRequest('getOrders', params, callback);
-};
-
-TradeSatoshi.prototype.getOrder = function getOrder(callback, id, market, withDetail)
-{
-    var params = constructParamArray(arguments, 3);
-
-    this.privateRequest('getOrder', params, callback);
-};
-
-TradeSatoshi.prototype.getTransactions = function getTransactions(callback, type, limit, offset, since, sinceType)
-{
-    var params = constructParamArray(arguments, 3);
-
-    this.privateRequest('getTransactions', params, callback);
-};
-
-TradeSatoshi.prototype.getMarketDepth2 = function getMarketDepth2(callback, limit, market)
-{
-    var params = constructParamArray(arguments, 2);
-
-    this.privateRequest('getMarketDepth2', params, callback);
-};
-
-TradeSatoshi.prototype.getDeposits = function getDeposits(callback, currency, pendingOnly)
-{
-    var params = constructParamArray(arguments, 2);
-
-    this.privateRequest('getDeposits', params, callback);
-};
-
-TradeSatoshi.prototype.getWithdrawal = function getWithdrawal(callback, id, currency)
-{
-    var params = constructParamArray(arguments, 2);
-
-    this.privateRequest('getWithdrawal', params, callback);
-};
-
-TradeSatoshi.prototype.getWithdrawals = function getWithdrawals(callback, currency, pendingOnly)
-{
-    var params = constructParamArray(arguments, 2);
-
-    this.privateRequest('getWithdrawals', params, callback);
-};
-
-TradeSatoshi.prototype.requestWithdrawal = function requestWithdrawal(callback, currency, amount)
-{
-    var params = constructParamArray(arguments, 2);
-
-    this.privateRequest('requestWithdrawal', params, callback);
-};
-
-TradeSatoshi.prototype.getAccountInfo = function getAccountInfo(callback, type)
-{
-    var params = constructParamArray(arguments, 1);
-
-    this.privateRequest('getAccountInfo', params, callback);
+    this.privateRequest('getBalances', callback);
 };
 
 module.exports = TradeSatoshi;
