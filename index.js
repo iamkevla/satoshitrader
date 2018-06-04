@@ -34,11 +34,10 @@ TradeSatoshi.prototype.privateRequest = function(method, callback)
 
     const nounce = new Date().getTime();
 
-    const text = `${this.key}POST${encodeURIComponent(this.server + '/private/getBalances').toLocaleLowerCase()}${nounce}`;
+    const text = `${this.key}POST${encodeURIComponent(this.server + '/private/getbalances').toLocaleLowerCase()}${nounce}`;
 
     var signer = crypto.createHmac('sha512', this.secret);
-    var hmac = signer.update(text).digest('hex');
-    var signature = new Buffer(this.key + ':' + hmac).toString('base64');
+    var signature = signer.update(text).digest('hex');
 
     var headers = {
         'Authorization': `Basic ${this.key}:${signature}:${nounce}`,
@@ -46,7 +45,7 @@ TradeSatoshi.prototype.privateRequest = function(method, callback)
     };
 
     var options = {
-        url: this.server + '/private/getBalances',
+        url: this.server + '/private/getbalances',
         method: 'POST',
         headers: headers
     };
