@@ -15,7 +15,7 @@ var TradeSatoshi = function TradeSatoshi(key, secret, server, timeout)
     this.timeout = timeout || 30000;
 };
 
-TradeSatoshi.prototype.privateRequest = function(method, params, callback)
+TradeSatoshi.prototype.privateRequest = function(method, callback)
 {
     var functionName = 'TradeSatoshi.privateRequest()',
         self = this;
@@ -23,12 +23,6 @@ TradeSatoshi.prototype.privateRequest = function(method, params, callback)
     if(!this.key || !this.secret)
     {
         var error = new VError('%s must provide key and secret to make this API request.', functionName);
-        return callback(error);
-    }
-
-    if(!_.isArray(params))
-    {
-        var error = new VError('%s second parameter %s must be an array. If no params then pass an empty array []', functionName, params);
         return callback(error);
     }
 
@@ -61,6 +55,7 @@ TradeSatoshi.prototype.privateRequest = function(method, params, callback)
         options.method, options.url, tonce, method, JSON.stringify(params));
 
     executeRequest(options, requestDesc, callback);
+    
 };
 
 function executeRequest(options, requestDesc, callback)
