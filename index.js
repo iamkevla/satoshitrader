@@ -3,7 +3,7 @@ var util = require('util'),
     request	= require('request'),
     crypto = require('crypto'),
     VError = require('verror'),
-    microtime = require('microtime');
+    now = require('nano-time');
 
 var TradeSatoshi = function TradeSatoshi(key, secret, server, timeout)
 {
@@ -38,7 +38,7 @@ TradeSatoshi.prototype.privateRequest = function(method, params, callback)
         return callback(error);
     }
 
-    var tonce = microtime.now();
+    var tonce = now.micro(); //microtime.now();
 
     var message = "tonce=" + tonce + "&" +
             "accesskey=" + this.key + "&" +
